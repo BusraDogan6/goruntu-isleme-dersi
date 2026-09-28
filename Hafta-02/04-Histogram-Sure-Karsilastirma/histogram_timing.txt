@@ -1,0 +1,10 @@
+Histogram Sure Karsilastirmasi
+
+Resim boyutu: 1600 x 1066
+CPU thread kapasitesi: 2
+Test sayisi: 100
+
+1 Thread ortalama: 4.4370 ms
+4 Thread ortalama: 4.6081 ms
+Hizlanma orani: 0.9629 kat
+Farkli histogram kutusu: 0
