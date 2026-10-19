@@ -1,0 +1,5 @@
+Canny: 7.06938 ms
+Prewitt CUDA: 0.26288 ms
+Sobel CUDA: 0.0424 ms
+Laplacian CUDA: 0.02976 ms
+LoG CUDA: 0.120672 ms
