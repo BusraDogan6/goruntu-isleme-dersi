@@ -1,0 +1,24 @@
+5. Hafta - Gorev 5
+X-Ray gri donusum ve renklendirme
+-----------------------------------
+
+Goruntu 1
+Ortalama mutlak fark: 172.287
+
+Goruntu 2
+Ortalama mutlak fark: 178.064
+
+Goruntu 3
+Ortalama mutlak fark: 171.845
+
+Goruntu 4
+Ortalama mutlak fark: 185.851
+
+Goruntu 5
+Ortalama mutlak fark: 131.385
+
+
+Renk paleti: TURBO
+Bu renk paletini secme nedenim: Gri goruntudeki yogunluk farklarini daha belirgin gostermesi ve nesnelerin sinirlarini daha kolay ayirt etmeye yardimci olmasidir.
+
+Yorum: Orijinal renkli X-ray goruntusu ile sonradan renklendirilen goruntu birebir ayni degildir. Bunun nedeni gri tonlamaya gecildiginde orijinal renk bilgisinin kaybolmasidir. TURBO ile yapilan renklendirme gri seviye yogunluklarina gore yapay renk atamasi yapmaktadir.
