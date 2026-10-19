@@ -1,0 +1,2 @@
+BGR -> RGB hata: 0
+RGB -> BGR hata: 0
