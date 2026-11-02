@@ -1,0 +1,9 @@
+Gaussian Gurultu
+ZNCC: 0.866703
+MSE: 602.29
+MAE: 19.6118
+
+Salt & Pepper Gurultu
+ZNCC: 0.667468
+MSE: 1888.45
+MAE: 12.8835
