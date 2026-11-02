@@ -1,0 +1,6 @@
+Es merkez X: 84
+Es merkez Y: 78
+Merkez oy sayisi: 468
+Yaricap esigi: 15
+Bulunan es merkezli cember sayisi: 9
+Yaricaplar: 12 18 20 24 30 38 40 44 50 

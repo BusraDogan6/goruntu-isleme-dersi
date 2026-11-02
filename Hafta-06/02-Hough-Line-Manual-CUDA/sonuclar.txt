@@ -1,0 +1,6 @@
+Theta sayisi: 180
+Rho sayisi: 375
+En yuksek oy: 54
+Esik degeri: 100
+Bulunan dogru sayisi: 0
+CUDA oylama suresi: 0.160224 ms

@@ -1,0 +1,7 @@
+Min yaricap: 10
+Max yaricap: 100
+Aci adimi: 2
+En yuksek oy: 82
+Esik: 61
+Bulunan cember sayisi: 10
+Ornek oylama yaricapi: 56
