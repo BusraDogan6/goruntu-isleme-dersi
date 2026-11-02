@@ -9,18 +9,19 @@
 using namespace std;
 using namespace cv;
 
+typedef vector<vector<complex<double>>> KarmaMatris;
 
-// ----------------------------------------------------
-// Manuel 2D DFT
-// ----------------------------------------------------
 
-vector<vector<complex<double>>> DFT2D(
-    const Mat& resim)
+// =====================================================
+// 1. MANUEL 2D DFT
+// =====================================================
+
+KarmaMatris DFT2D(const Mat& resim)
 {
     int M = resim.rows;
     int N = resim.cols;
 
-    vector<vector<complex<double>>> harmonikler(
+    KarmaMatris harmonikler(
         M,
         vector<complex<double>>(N)
     );
@@ -52,14 +53,18 @@ vector<vector<complex<double>>> DFT2D(
                     );
 
 
+                    double piksel =
+                        resim.at<uchar>(x, y);
+
+
                     toplam +=
-                        (double)resim.at<uchar>(x, y)
-                        * harmonik;
+                        piksel * harmonik;
                 }
             }
 
 
-            harmonikler[u][v] = toplam;
+            harmonikler[u][v] =
+                toplam;
         }
     }
 
@@ -68,15 +73,15 @@ vector<vector<complex<double>>> DFT2D(
 }
 
 
-// ----------------------------------------------------
-// Manuel 2D IDFT
-// ----------------------------------------------------
+// =====================================================
+// 2. MANUEL 2D IDFT
+// =====================================================
 
-Mat IDFT2D(
-    const vector<vector<complex<double>>>& harmonikler)
+Mat IDFT2D(const KarmaMatris& harmonikler)
 {
     int M = harmonikler.size();
     int N = harmonikler[0].size();
+
 
     Mat sonuc(
         M,
@@ -113,19 +118,21 @@ Mat IDFT2D(
 
                     toplam +=
                         harmonikler[u][v]
-                        * harmonik;
+                        *
+                        harmonik;
                 }
             }
 
 
-            // IDFT'de N*M ile bolunur
             toplam =
                 toplam /
                 (double)(M * N);
 
 
             int deger =
-                round(toplam.real());
+                round(
+                    toplam.real()
+                );
 
 
             if (deger < 0)
@@ -145,24 +152,125 @@ Mat IDFT2D(
 }
 
 
-// ----------------------------------------------------
-// ZNCC
-// Zero Mean Normalized Cross Correlation
-// ----------------------------------------------------
+// =====================================================
+// 3. FREKANSLARI MERKEZE KAYDIR
+//
+// Fonksiyon iki kez uygulanirsa eski haline doner.
+// =====================================================
+
+KarmaMatris frekansKaydir(
+    const KarmaMatris& F)
+{
+    int M = F.size();
+    int N = F[0].size();
+
+
+    KarmaMatris sonuc(
+        M,
+        vector<complex<double>>(N)
+    );
+
+
+    for (int i = 0; i < M; i++)
+    {
+        for (int j = 0; j < N; j++)
+        {
+            int yeniI =
+                (i + M / 2) % M;
+
+            int yeniJ =
+                (j + N / 2) % N;
+
+
+            sonuc[yeniI][yeniJ] =
+                F[i][j];
+        }
+    }
+
+
+    return sonuc;
+}
+
+
+// =====================================================
+// 4. YUMUSAK GAUSSIAN FREKANS FILTRESI
+//
+// Eski kod gibi yuksek frekanslari tamamen SIFIRLAMAZ.
+//
+// minKoruma sayesinde yuksek frekanslarin bir kismi
+// korunur. Bu nedenle detay kaybi ve bulaniklik azalir.
+// =====================================================
+
+void yumusakGaussianFiltre(
+    KarmaMatris& F,
+    double sigma,
+    double minKoruma)
+{
+    int M = F.size();
+    int N = F[0].size();
+
+
+    int merkezX = M / 2;
+    int merkezY = N / 2;
+
+
+    for (int i = 0; i < M; i++)
+    {
+        for (int j = 0; j < N; j++)
+        {
+            double dx =
+                i - merkezX;
+
+            double dy =
+                j - merkezY;
+
+
+            double uzaklikKare =
+                dx * dx + dy * dy;
+
+
+            // Normal Gaussian katsayisi
+            double gaussian =
+                exp(
+                    -uzaklikKare /
+                    (2.0 * sigma * sigma)
+                );
+
+
+            // Yuksek frekanslari tamamen silme.
+            // Bir miktarini koru.
+            double H =
+                minKoruma
+                +
+                (1.0 - minKoruma)
+                * gaussian;
+
+
+            F[i][j] =
+                F[i][j] * H;
+        }
+    }
+}
+
+
+// =====================================================
+// 5. ZNCC
+// =====================================================
 
 double ZNCC(
     const Mat& resim1,
     const Mat& resim2)
 {
-    int toplamPiksel =
-        resim1.rows * resim1.cols;
+    int pikselSayisi =
+        resim1.rows
+        *
+        resim1.cols;
 
 
-    double ortalama1 = 0;
-    double ortalama2 = 0;
+    double ortalama1 = 0.0;
+    double ortalama2 = 0.0;
 
 
-    // Ortalamalari hesapla
     for (int y = 0; y < resim1.rows; y++)
     {
         for (int x = 0; x < resim1.cols; x++)
@@ -176,13 +284,17 @@ double ZNCC(
     }
 
 
-    ortalama1 /= toplamPiksel;
-    ortalama2 /= toplamPiksel;
+    ortalama1 /=
+        pikselSayisi;
+
+    ortalama2 /=
+        pikselSayisi;
 
 
-    double pay = 0;
-    double payda1 = 0;
-    double payda2 = 0;
+    double pay = 0.0;
+
+    double payda1 = 0.0;
+    double payda2 = 0.0;
 
 
     for (int y = 0; y < resim1.rows; y++)
@@ -191,12 +303,14 @@ double ZNCC(
         {
             double fark1 =
                 resim1.at<uchar>(y, x)
-                - ortalama1;
+                -
+                ortalama1;
 
 
             double fark2 =
                 resim2.at<uchar>(y, x)
-                - ortalama2;
+                -
+                ortalama2;
 
 
             pay +=
@@ -214,26 +328,30 @@ double ZNCC(
 
 
     double payda =
-        sqrt(payda1 * payda2);
+        sqrt(
+            payda1 * payda2
+        );
 
 
-    if (payda == 0)
-        return 0;
+    if (payda == 0.0)
+    {
+        return 0.0;
+    }
 
 
     return pay / payda;
 }
 
 
-// ----------------------------------------------------
-// MSE
-// ----------------------------------------------------
+// =====================================================
+// 6. MSE
+// =====================================================
 
 double MSE(
     const Mat& resim1,
     const Mat& resim2)
 {
-    double toplam = 0;
+    double toplam = 0.0;
 
 
     for (int y = 0; y < resim1.rows; y++)
@@ -253,19 +371,23 @@ double MSE(
 
 
     return toplam /
-        (resim1.rows * resim1.cols);
+        (
+            resim1.rows
+            *
+            resim1.cols
+        );
 }
 
 
-// ----------------------------------------------------
-// MAE
-// ----------------------------------------------------
+// =====================================================
+// 7. MAE
+// =====================================================
 
 double MAE(
     const Mat& resim1,
     const Mat& resim2)
 {
-    double toplam = 0;
+    double toplam = 0.0;
 
 
     for (int y = 0; y < resim1.rows; y++)
@@ -286,19 +408,111 @@ double MAE(
 
 
     return toplam /
-        (resim1.rows * resim1.cols);
+        (
+            resim1.rows
+            *
+            resim1.cols
+        );
 }
 
 
+// =====================================================
+// 8. PSNR
+// =====================================================
+
+double PSNRHesapla(
+    const Mat& resim1,
+    const Mat& resim2)
+{
+    double mse =
+        MSE(
+            resim1,
+            resim2
+        );
+
+
+    if (mse == 0)
+    {
+        return 100.0;
+    }
+
+
+    return
+        10.0 *
+        log10(
+            (255.0 * 255.0)
+            /
+            mse
+        );
+}
+
+
+// =====================================================
+// 9. BIR GURULTULU GORUNTUYU ISLE
+// =====================================================
+
+Mat resmiTemizle(
+    const Mat& gurultulu,
+    double sigma,
+    double minKoruma)
+{
+    // DFT
+    KarmaMatris F =
+        DFT2D(
+            gurultulu
+        );
+
+
+    // Dusuk frekanslari merkeze getir
+    KarmaMatris merkezli =
+        frekansKaydir(
+            F
+        );
+
+
+    // Yumusayarak filtrele
+    yumusakGaussianFiltre(
+        merkezli,
+        sigma,
+        minKoruma
+    );
+
+
+    // Frekanslari eski konumuna getir
+    KarmaMatris geri =
+        frekansKaydir(
+            merkezli
+        );
+
+
+    // IDFT ile goruntuye don
+    Mat sonuc =
+        IDFT2D(
+            geri
+        );
+
+
+    return sonuc;
+}
+
+
+// =====================================================
+// MAIN
+// =====================================================
 
 int main()
 {
     string gorev8 =
         "/content/goruntu-isleme-dersi/Hafta-07/08-Gurultu-DFT/";
 
+
     string cikis =
         "/content/goruntu-isleme-dersi/Hafta-07/09-IDFT-ZNCC/";
 
+
+    // -------------------------------------------------
+    // Resimleri oku
+    // -------------------------------------------------
 
     Mat orijinal =
         imread(
@@ -322,193 +536,330 @@ int main()
 
 
     if (
-        orijinal.empty() ||
-        gaussian.empty() ||
+        orijinal.empty()
+        ||
+        gaussian.empty()
+        ||
         saltPepper.empty()
     )
     {
-        cout << "Girdi resimleri bulunamadi!" << endl;
+        cout << "Resimler bulunamadi!"
+             << endl;
+
         return -1;
     }
 
 
-    cout << "Gaussian goruntu icin DFT hesaplaniyor..."
+    // -------------------------------------------------
+    // Filtre ayarlari
+    //
+    // Buyuk sigma =
+    // daha fazla detay korunur.
+    //
+    // Buyuk minKoruma =
+    // yuksek frekanslar daha fazla korunur.
+    // -------------------------------------------------
+
+    double gaussianSigma =
+        24.0;
+
+    double gaussianMinKoruma =
+        0.25;
+
+
+    double saltSigma =
+        26.0;
+
+    double saltMinKoruma =
+        0.30;
+
+
+    cout << "Gaussian goruntu isleniyor..."
          << endl;
 
 
-    vector<vector<complex<double>>> gaussianDFT =
-        DFT2D(gaussian);
-
-
-    cout << "Gaussian goruntu icin IDFT hesaplaniyor..."
-         << endl;
-
-
-    Mat gaussianYeniden =
-        IDFT2D(gaussianDFT);
-
-
-    imwrite(
-        cikis + "01_gaussian_idft.png",
-        gaussianYeniden
-    );
-
-
-    cout << endl;
-
-    cout << "Salt & Pepper goruntu icin DFT hesaplaniyor..."
-         << endl;
-
-
-    vector<vector<complex<double>>> saltDFT =
-        DFT2D(saltPepper);
-
-
-    cout << "Salt & Pepper goruntu icin IDFT hesaplaniyor..."
-         << endl;
-
-
-    Mat saltYeniden =
-        IDFT2D(saltDFT);
-
-
-    imwrite(
-        cikis + "02_salt_pepper_idft.png",
-        saltYeniden
-    );
-
-
-    // -----------------------------------
-    // ZNCC
-    // -----------------------------------
-
-    double gaussianZNCC =
-        ZNCC(
-            orijinal,
-            gaussianYeniden
+    Mat gaussianTemiz =
+        resmiTemizle(
+            gaussian,
+            gaussianSigma,
+            gaussianMinKoruma
         );
 
 
-    double saltZNCC =
-        ZNCC(
-            orijinal,
-            saltYeniden
+    cout << "Salt & Pepper goruntu isleniyor..."
+         << endl;
+
+
+    Mat saltTemiz =
+        resmiTemizle(
+            saltPepper,
+            saltSigma,
+            saltMinKoruma
         );
 
 
-    // Ek olarak MSE ve MAE de hesaplayalim
+    // -------------------------------------------------
+    // Sonuclari kaydet
+    // -------------------------------------------------
+
+    imwrite(
+        cikis + "01_gaussian_temiz.png",
+        gaussianTemiz
+    );
+
+
+    imwrite(
+        cikis + "02_salt_pepper_temiz.png",
+        saltTemiz
+    );
+
+
+    // -------------------------------------------------
+    // Gurultulu goruntulerin metrikleri
+    // -------------------------------------------------
+
+    double gaussianZNCCOnce =
+        ZNCC(
+            orijinal,
+            gaussian
+        );
+
+
+    double saltZNCCOnce =
+        ZNCC(
+            orijinal,
+            saltPepper
+        );
+
+
+    // -------------------------------------------------
+    // Filtre sonrasi metrikler
+    // -------------------------------------------------
+
+    double gaussianZNCCSonra =
+        ZNCC(
+            orijinal,
+            gaussianTemiz
+        );
+
+
+    double saltZNCCSonra =
+        ZNCC(
+            orijinal,
+            saltTemiz
+        );
+
 
     double gaussianMSE =
         MSE(
             orijinal,
-            gaussianYeniden
+            gaussianTemiz
         );
 
 
     double saltMSE =
         MSE(
             orijinal,
-            saltYeniden
+            saltTemiz
         );
 
 
     double gaussianMAE =
         MAE(
             orijinal,
-            gaussianYeniden
+            gaussianTemiz
         );
 
 
     double saltMAE =
         MAE(
             orijinal,
-            saltYeniden
+            saltTemiz
         );
 
 
+    double gaussianPSNR =
+        PSNRHesapla(
+            orijinal,
+            gaussianTemiz
+        );
+
+
+    double saltPSNR =
+        PSNRHesapla(
+            orijinal,
+            saltTemiz
+        );
+
+
+    // -------------------------------------------------
+    // Terminal sonucu
+    // -------------------------------------------------
+
     cout << endl;
 
-    cout << "-------------------------" << endl;
-    cout << "SONUCLAR" << endl;
-    cout << "-------------------------" << endl;
-
-
-    cout << endl;
-
-    cout << "Gaussian Gurultu:" << endl;
-
-    cout << "ZNCC = "
-         << gaussianZNCC
+    cout << "================================"
          << endl;
 
-    cout << "MSE  = "
+    cout << "GAUSSIAN SONUCLARI"
+         << endl;
+
+    cout << "================================"
+         << endl;
+
+
+    cout << "Gurultulu ZNCC: "
+         << gaussianZNCCOnce
+         << endl;
+
+
+    cout << "Temiz ZNCC    : "
+         << gaussianZNCCSonra
+         << endl;
+
+
+    cout << "MSE           : "
          << gaussianMSE
          << endl;
 
-    cout << "MAE  = "
+
+    cout << "MAE           : "
          << gaussianMAE
          << endl;
 
 
+    cout << "PSNR          : "
+         << gaussianPSNR
+         << endl;
+
+
     cout << endl;
 
 
-    cout << "Salt & Pepper Gurultu:" << endl;
-
-    cout << "ZNCC = "
-         << saltZNCC
+    cout << "================================"
          << endl;
 
-    cout << "MSE  = "
+    cout << "SALT & PEPPER SONUCLARI"
+         << endl;
+
+    cout << "================================"
+         << endl;
+
+
+    cout << "Gurultulu ZNCC: "
+         << saltZNCCOnce
+         << endl;
+
+
+    cout << "Temiz ZNCC    : "
+         << saltZNCCSonra
+         << endl;
+
+
+    cout << "MSE           : "
          << saltMSE
          << endl;
 
-    cout << "MAE  = "
+
+    cout << "MAE           : "
          << saltMAE
          << endl;
 
 
-    // Sonuclari dosyaya yaz
+    cout << "PSNR          : "
+         << saltPSNR
+         << endl;
 
-    ofstream dosya(
+
+    // -------------------------------------------------
+    // TXT raporu
+    // -------------------------------------------------
+
+    ofstream rapor(
         cikis + "sonuclar.txt"
     );
 
 
-    dosya << "Gaussian Gurultu" << endl;
-
-    dosya << "ZNCC: "
-          << gaussianZNCC
-          << endl;
-
-    dosya << "MSE: "
-          << gaussianMSE
-          << endl;
-
-    dosya << "MAE: "
-          << gaussianMAE
-          << endl;
+    rapor
+        << "GAUSSIAN GURULTU"
+        << endl;
 
 
-    dosya << endl;
+    rapor
+        << "Gurultulu ZNCC: "
+        << gaussianZNCCOnce
+        << endl;
 
 
-    dosya << "Salt & Pepper Gurultu" << endl;
-
-    dosya << "ZNCC: "
-          << saltZNCC
-          << endl;
-
-    dosya << "MSE: "
-          << saltMSE
-          << endl;
-
-    dosya << "MAE: "
-          << saltMAE
-          << endl;
+    rapor
+        << "Temiz ZNCC: "
+        << gaussianZNCCSonra
+        << endl;
 
 
-    dosya.close();
+    rapor
+        << "MSE: "
+        << gaussianMSE
+        << endl;
+
+
+    rapor
+        << "MAE: "
+        << gaussianMAE
+        << endl;
+
+
+    rapor
+        << "PSNR: "
+        << gaussianPSNR
+        << endl;
+
+
+    rapor << endl;
+
+
+    rapor
+        << "SALT & PEPPER GURULTU"
+        << endl;
+
+
+    rapor
+        << "Gurultulu ZNCC: "
+        << saltZNCCOnce
+        << endl;
+
+
+    rapor
+        << "Temiz ZNCC: "
+        << saltZNCCSonra
+        << endl;
+
+
+    rapor
+        << "MSE: "
+        << saltMSE
+        << endl;
+
+
+    rapor
+        << "MAE: "
+        << saltMAE
+        << endl;
+
+
+    rapor
+        << "PSNR: "
+        << saltPSNR
+        << endl;
+
+
+    rapor.close();
+
+
+    cout << endl;
+
+    cout << "Tum islemler tamamlandi."
+         << endl;
 
 
     return 0;
