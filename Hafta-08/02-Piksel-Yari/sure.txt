@@ -1,0 +1,4 @@
+Resim boyutu: 3840x2160
+Kanal sayisi: 3
+Dongu suresi (ms): 137.768
+Dongu suresi (mikro saniye): 137768
